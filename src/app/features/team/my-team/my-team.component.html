@@ -1,0 +1,194 @@
+<div class="my-team-container">
+  <!-- Header -->
+  <div class="page-header">
+    <h1>My Team</h1>
+    @if (currentMatchweek(); as matchweek) {
+      <div class="matchweek-info">
+        <span class="matchweek-label">Matchweek {{ matchweek.weekNumber }}</span>
+        @if (matchweekService.isDeadlinePassed(matchweek)) {
+          <span class="deadline-status expired">Deadline Passed</span>
+        } @else {
+          <span class="deadline-status active">
+            Deadline: {{ matchweek.deadlineDate | date:'short' }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading your team...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error(); as errorMsg) {
+    <div class="error-container">
+      <div class="error-message">
+        <i class="icon-error"></i>
+        {{ errorMsg }}
+      </div>
+      <button class="btn-retry" (click)="loadUserTeam()">Try Again</button>
+    </div>
+  }
+
+  <!-- No Team State -->
+  @if (!hasTeam() && !isLoading() && !error()) {
+    <div class="no-team-container">
+      <div class="no-team-content">
+        <div class="no-team-icon">⚽</div>
+        <h2>No Team Created</h2>
+        <p>Create your fantasy team to start playing!</p>
+        <button class="btn-primary" (click)="createNewTeam()">
+          Create My Team
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Team Display -->
+  @if (hasTeam() && currentUserTeam(); as team) {
+    <div class="team-content">
+      <!-- Team Stats -->
+      <div class="team-stats">
+        <div class="stat-card">
+          <div class="stat-label">Players</div>
+          <div class="stat-value">{{ team.players?.length || 0 }}/4</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Points</div>
+          <div class="stat-value">{{ team.totalPoints || 0 }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" [class]="isTeamValid() ? 'valid' : 'invalid'">
+            {{ isTeamValid() ? 'Complete' : 'Incomplete' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Formation Display -->
+      <div class="formation-container">
+        <h2>Team Formation</h2>
+        <div class="football-pitch">
+          <!-- Goalkeepers -->
+          <div class="formation-line goalkeeper-line">
+            <div class="position-group">
+              <h3>Goalkeeper</h3>
+              <div class="players-grid">
+                @for (player of getPlayersByPosition('Goalkeeper'); track player.id) {
+                  <div class="player-card goalkeeper">
+                    <div class="player-info">
+                      <span class="player-name">{{ player.name }}</span>
+                      <span class="player-team">{{ player.teamName }}</span>
+                    </div>
+                    <button class="remove-btn" (click)="removePlayer(player.id)" title="Remove player">
+                      <i class="icon-close"></i>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="empty-slot">
+                    <span>No goalkeeper selected</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Defenders -->
+          <div class="formation-line defender-line">
+            <div class="position-group">
+              <h3>Defenders</h3>
+              <div class="players-grid">
+                @for (player of getPlayersByPosition('Defender'); track player.id) {
+                  <div class="player-card defender">
+                    <div class="player-info">
+                      <span class="player-name">{{ player.name }}</span>
+                      <span class="player-team">{{ player.teamName }}</span>
+                    </div>
+                    <button class="remove-btn" (click)="removePlayer(player.id)" title="Remove player">
+                      <i class="icon-close"></i>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="empty-slot">
+                    <span>No defenders selected</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Midfielders -->
+          <div class="formation-line midfielder-line">
+            <div class="position-group">
+              <h3>Midfielders</h3>
+              <div class="players-grid">
+                @for (player of getPlayersByPosition('Midfielder'); track player.id) {
+                  <div class="player-card midfielder">
+                    <div class="player-info">
+                      <span class="player-name">{{ player.name }}</span>
+                      <span class="player-team">{{ player.teamName }}</span>
+                    </div>
+                    <button class="remove-btn" (click)="removePlayer(player.id)" title="Remove player">
+                      <i class="icon-close"></i>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="empty-slot">
+                    <span>No midfielders selected</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Forwards -->
+          <div class="formation-line forward-line">
+            <div class="position-group">
+              <h3>Forwards</h3>
+              <div class="players-grid">
+                @for (player of getPlayersByPosition('Forward'); track player.id) {
+                  <div class="player-card forward">
+                    <div class="player-info">
+                      <span class="player-name">{{ player.name }}</span>
+                      <span class="player-team">{{ player.teamName }}</span>
+                    </div>
+                    <button class="remove-btn" (click)="removePlayer(player.id)" title="Remove player">
+                      <i class="icon-close"></i>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="empty-slot">
+                    <span>No forwards selected</span>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Actions -->
+      <div class="team-actions">
+        <button class="btn-secondary" routerLink="/players">
+          <i class="icon-add"></i>
+          Add Players
+        </button>
+        <button class="btn-secondary" (click)="validateTeam()" [disabled]="!isTeamValid()">
+          <i class="icon-check"></i>
+          Validate Team
+        </button>
+        @if (isTeamValid()) {
+          <button class="btn-primary" (click)="submitTeam()">
+            <i class="icon-submit"></i>
+            Submit Team
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

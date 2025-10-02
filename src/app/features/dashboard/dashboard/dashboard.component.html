@@ -1,0 +1,119 @@
+<div class="dashboard-content">
+  <div class="dashboard-header">
+    <h1>Fantasy Dashboard</h1>
+    <p class="subtitle">Welcome back, {{ currentUser()?.username }}!</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your fantasy data...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading()">
+    <!-- Fantasy Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-info">
+          <h3>Total Points</h3>
+          <div class="stat-value">{{ totalPoints() }}</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">⚽</div>
+        <div class="stat-info">
+          <h3>Players</h3>
+          <div class="stat-value">{{ playerCount() }}/4</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-info">
+          <h3>Team Status</h3>
+          <div class="stat-value" [class]="isTeamLocked() ? 'locked' : 'unlocked'">
+            {{ isTeamLocked() ? 'Locked' : 'Open' }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="stat-card" *ngIf="currentMatchweek()">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-info">
+          <h3>Deadline</h3>
+          <div class="stat-value">{{ getTimeUntilDeadline() }}</div>
+        </div>
+      </div>
+    </div>
+  
+  <div class="dashboard-grid">
+    <section class="dashboard-section">
+      <div class="section-header">
+        <h2>My Fantasy Team</h2>
+      </div>
+      <div class="team-status-card">
+        <div *ngIf="userTeam(); else noTeam" class="team-info">
+          <div class="info-item">
+            <span class="label">Team Name:</span>
+            <span class="value">{{ teamName() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Total Points:</span>
+            <span class="value">{{ totalPoints() }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Players:</span>
+            <span class="value">{{ playerCount() }}/4</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Status:</span>
+            <span class="value badge" [class]="isTeamLocked() ? 'locked' : 'open'">
+              {{ isTeamLocked() ? 'Locked' : 'Open for Changes' }}
+            </span>
+          </div>
+          <div *ngIf="currentMatchweek()" class="info-item">
+            <span class="label">Matchweek {{ currentMatchweek()!.weekNumber }} Deadline:</span>
+            <span class="value">{{ formatDate(currentMatchweek()!.deadlineDate) }}</span>
+          </div>
+        </div>
+        <ng-template #noTeam>
+          <div class="no-team">
+            <div class="no-team-icon">🏆</div>
+            <h3>No Team Created Yet</h3>
+            <p>Create your fantasy team to start playing!</p>
+            <a routerLink="/my-team" class="create-team-btn">
+              Create My Team
+            </a>
+          </div>
+        </ng-template>
+      </div>
+    </section>
+    
+    <section class="dashboard-section">
+      <div class="section-header">
+        <h2>Quick Actions</h2>
+      </div>
+      <div class="quick-actions">
+        <a routerLink="/my-team" class="action-btn primary">
+          <i class="icon-team"></i>
+          Manage My Team
+        </a>
+        <a routerLink="/players" class="action-btn secondary">
+          <i class="icon-players"></i>
+          Browse Players
+        </a>
+        <a routerLink="/leaderboard" class="action-btn secondary">
+          <i class="icon-leaderboard"></i>
+          View Leaderboard
+        </a>
+        <a routerLink="/fixtures" class="action-btn secondary">
+          <i class="icon-fixtures"></i>
+          Check Fixtures
+        </a>
+      </div>
+    </section>
+  </div>
+</div>

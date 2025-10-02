@@ -1,0 +1,99 @@
+<div class="app-layout">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <button 
+        class="sidebar-toggle" 
+        (click)="toggleSidebar()"
+        aria-label="Toggle sidebar">
+        <i class="icon-menu"></i>
+      </button>
+      <h1 class="app-title">
+        <i class="icon-trophy"></i>
+        Fantasy Football
+      </h1>
+    </div>
+    
+    <div class="header-right">
+      @if (authService.isAuthenticated()) {
+        <div class="user-menu">
+          <div class="user-info" (click)="navigateToProfile()">
+            <div class="user-avatar">
+              {{ authService.currentUser()?.username?.charAt(0)?.toUpperCase() }}
+            </div>
+            <div class="user-details">
+              <span class="username">{{ authService.currentUser()?.username }}</span>
+              <span class="user-role">{{ authService.currentUser()?.role }}</span>
+            </div>
+          </div>
+          <button class="logout-btn" (click)="logout()" aria-label="Logout">
+            <i class="icon-logout"></i>
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" [class.collapsed]="isSidebarCollapsed()">
+    <div class="sidebar-content">
+      <ul class="nav-menu">
+        <li class="nav-item">
+          <a [routerLink]="authService.isAdmin() ? '/admin/dashboard' : '/dashboard'" routerLinkActive="active" class="nav-link">
+            <i class="icon-dashboard"></i>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/my-team" routerLinkActive="active" class="nav-link">
+            <i class="icon-team"></i>
+            <span class="nav-text">My Team</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/players" routerLinkActive="active" class="nav-link">
+            <i class="icon-players"></i>
+            <span class="nav-text">Players</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/teams" routerLinkActive="active" class="nav-link">
+            <i class="icon-teams"></i>
+            <span class="nav-text">Teams</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/fixtures" routerLinkActive="active" class="nav-link">
+            <i class="icon-fixtures"></i>
+            <span class="nav-text">Fixtures</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a routerLink="/leaderboard" routerLinkActive="active" class="nav-link">
+            <i class="icon-leaderboard"></i>
+            <span class="nav-text">Leaderboard</span>
+          </a>
+        </li>
+        @if (authService.isAdmin()) {
+          <li class="nav-divider"></li>
+          <li class="nav-section-title">
+            <span>Administration</span>
+          </li>
+          <li class="nav-item">
+            <a routerLink="/admin" routerLinkActive="active" class="nav-link">
+              <i class="icon-admin"></i>
+              <span class="nav-text">Admin Panel</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed()">
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

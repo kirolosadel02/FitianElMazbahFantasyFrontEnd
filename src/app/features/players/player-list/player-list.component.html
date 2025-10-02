@@ -1,0 +1,155 @@
+<div class="player-list-container">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Player Market</h1>
+      <p class="subtitle">Browse and select players for your fantasy team</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-secondary" routerLink="/my-team">
+        <i class="icon-team"></i>
+        Back to My Team
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-container">
+    <div class="filters-grid">
+      <!-- Position Filter -->
+      <div class="filter-group">
+        <label for="position">Position</label>
+        <select
+          id="position"
+          [value]="selectedPosition()"
+          (change)="onPositionChange($any($event.target).value)">
+          <option value="">All Positions</option>
+          <option *ngFor="let position of positions" [value]="position">{{ position }}</option>
+        </select>
+      </div>
+
+      <!-- Team Filter -->
+      <div class="filter-group">
+        <label for="team">Team</label>
+        <select
+          id="team"
+          [value]="selectedTeam() || ''"
+          (change)="onTeamChange($any($event.target).value)">
+          <option value="">All Teams</option>
+          <option *ngFor="let team of teams()" [value]="team.id">{{ team.name }}</option>
+        </select>
+      </div>
+
+      <!-- Search -->
+      <div class="filter-group">
+        <label for="search">Search</label>
+        <input
+          type="text"
+          id="search"
+          placeholder="Search players..."
+          [value]="searchQuery()"
+          (input)="searchQuery.set($any($event.target).value)"
+          (keyup.enter)="onSearchChange()">
+      </div>
+
+      <!-- Actions -->
+      <div class="filter-actions">
+        <button class="btn-primary" (click)="onSearchChange()">
+          <i class="icon-search"></i>
+          Search
+        </button>
+        <button class="btn-secondary" (click)="clearFilters()">
+          <i class="icon-clear"></i>
+          Clear
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error() as errorMsg" class="error-container">
+    <div class="error-message">
+      <i class="icon-error"></i>
+      {{ errorMsg }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading players...</p>
+  </div>
+
+  <!-- Results Info -->
+  <div *ngIf="!isLoading()" class="results-info">
+    <p>Showing {{ filteredPlayers().length }} players</p>
+  </div>
+
+  <!-- Players Grid -->
+  <div *ngIf="!isLoading() && filteredPlayers().length > 0" class="players-grid">
+    <div *ngFor="let player of filteredPlayers()" class="player-card" [ngClass]="getPositionClass(player.position)">
+      <div class="player-header">
+        <div class="player-position-badge" [ngClass]="getPositionClass(player.position)">
+          {{ player.position }}
+        </div>
+      </div>
+
+      <div class="player-info">
+        <h3 class="player-name">{{ player.name }}</h3>
+        <p class="player-team">{{ player.teamName }}</p>
+      </div>
+
+      <div class="player-actions">
+        <button class="btn-add" (click)="addPlayerToTeam(player)">
+          <i class="icon-add"></i>
+          Add to Team
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading() && filteredPlayers().length === 0" class="empty-state">
+    <div class="empty-icon">🔍</div>
+    <h2>No Players Found</h2>
+    <p>Try adjusting your search criteria or filters</p>
+    <button class="btn-secondary" (click)="clearFilters()">
+      Clear Filters
+    </button>
+  </div>
+
+  <!-- Pagination -->
+  <div *ngIf="totalPages() > 1 && !isLoading()" class="pagination-container">
+    <nav class="pagination">
+      <!-- Previous Button -->
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === 1"
+        (click)="onPageChange(currentPage() - 1)">
+        <i class="icon-prev"></i>
+        Previous
+      </button>
+
+      <!-- Page Numbers -->
+      <ng-container *ngFor="let page of pageNumbers">
+        <span *ngIf="page === -1" class="page-ellipsis">...</span>
+        <button
+          *ngIf="page !== -1"
+          class="page-btn"
+          [class.active]="page === currentPage()"
+          (click)="onPageChange(page)">
+          {{ page }}
+        </button>
+      </ng-container>
+
+      <!-- Next Button -->
+      <button
+        class="page-btn"
+        [disabled]="currentPage() === totalPages()"
+        (click)="onPageChange(currentPage() + 1)">
+        Next
+        <i class="icon-next"></i>
+      </button>
+    </nav>
+  </div>
+</div>

@@ -1,0 +1,128 @@
+<div class="admin-dashboard">
+  <div class="dashboard-header">
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">Overview of your fantasy football system</p>
+  </div>
+
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading statistics...</p>
+  </div>
+
+  <div *ngIf="!isLoading()" class="dashboard-content">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon players">
+          <i class="icon-player"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ totalPlayers() }}</h3>
+          <p>Total Players</p>
+        </div>
+        <a routerLink="/admin/players" class="stat-action">
+          Manage →
+        </a>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon teams">
+          <i class="icon-team"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ totalTeams() }}</h3>
+          <p>Football Teams</p>
+        </div>
+        <a routerLink="/admin/teams" class="stat-action">
+          Manage →
+        </a>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon users">
+          <i class="icon-users"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ totalUsers() }}</h3>
+          <p>Registered Users</p>
+        </div>
+        <a routerLink="/admin/users" class="stat-action">
+          Manage →
+        </a>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon user-teams">
+          <i class="icon-teams"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ totalUserTeams() }}</h3>
+          <p>Fantasy Teams</p>
+        </div>
+        <a routerLink="/admin/user-teams" class="stat-action">
+          Manage →
+        </a>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon matchweeks">
+          <i class="icon-calendar"></i>
+        </div>
+        <div class="stat-info">
+          <h3>{{ activeMatchweeks() }}</h3>
+          <p>Active Matchweeks</p>
+        </div>
+        <a routerLink="/admin/matchweeks" class="stat-action">
+          Manage →
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <h2>Quick Actions</h2>
+      <div class="actions-grid">
+        <button class="action-btn primary" routerLink="/admin/players/new">
+          <i class="icon-add"></i>
+          Add New Player
+        </button>
+
+        <button class="action-btn secondary" routerLink="/admin/teams/new">
+          <i class="icon-add"></i>
+          Add New Team
+        </button>
+
+        <button class="action-btn tertiary" routerLink="/admin/matchweeks/new">
+          <i class="icon-add"></i>
+          Create Matchweek
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+      <h2>System Status</h2>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="activity-icon success">
+            <i class="icon-check"></i>
+          </div>
+          <div class="activity-content">
+            <h4>System Running</h4>
+            <p>All services are operational</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-icon info">
+            <i class="icon-info"></i>
+          </div>
+          <div class="activity-content">
+            <h4>Database Connected</h4>
+            <p>Successfully connected to the database</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

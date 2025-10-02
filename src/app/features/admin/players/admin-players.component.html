@@ -1,0 +1,166 @@
+<div class="admin-players">
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Player Management</h1>
+      <p class="subtitle">Manage football players in your system</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openAddForm()">
+        <i class="icon-add"></i>
+        Add New Player
+      </button>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error() as errorMsg" class="error-container">
+    <div class="error-message">
+      <i class="icon-error"></i>
+      {{ errorMsg }}
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading players...</p>
+  </div>
+
+  <!-- Players Table -->
+  <div *ngIf="!isLoading()" class="content-card">
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Team</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let player of players()">
+            <td>{{ player.id }}</td>
+            <td class="player-name">{{ player.name }}</td>
+            <td>
+              <span class="position-badge" [class]="player.position.toLowerCase()">
+                {{ player.position }}
+              </span>
+            </td>
+            <td>{{ getTeamName(player.teamId) }}</td>
+            <td>{{ player.createdAt | date:'short' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-icon edit" (click)="editPlayer(player)" title="Edit">
+                  <i class="icon-edit"></i>
+                </button>
+                <button class="btn-icon delete" (click)="deletePlayer(player)" title="Delete">
+                  <i class="icon-delete"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages() > 1" class="pagination-container">
+      <nav class="pagination">
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === 1"
+          (click)="onPageChange(currentPage() - 1)">
+          Previous
+        </button>
+
+        <ng-container *ngFor="let page of pageNumbers">
+          <span *ngIf="page === -1" class="page-ellipsis">...</span>
+          <button
+            *ngIf="page !== -1"
+            class="page-btn"
+            [class.active]="page === currentPage()"
+            (click)="onPageChange(page)">
+            {{ page }}
+          </button>
+        </ng-container>
+
+        <button
+          class="page-btn"
+          [disabled]="currentPage() === totalPages()"
+          (click)="onPageChange(currentPage() + 1)">
+          Next
+        </button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- Player Form Modal -->
+<div *ngIf="showAddForm()" class="modal-overlay" (click)="closeForm()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{ editingPlayer() ? 'Edit Player' : 'Add New Player' }}</h2>
+      <button class="close-btn" (click)="closeForm()">
+        <i class="icon-close"></i>
+      </button>
+    </div>
+
+    <form [formGroup]="playerForm" (ngSubmit)="onSubmit()" class="modal-form">
+      <div class="form-group">
+        <label for="playerName">Player Name</label>
+        <input
+          type="text"
+          id="playerName"
+          formControlName="name"
+          placeholder="Enter player name"
+          class="form-input"
+          [class.error]="playerForm.get('name')?.invalid && playerForm.get('name')?.touched">
+        <div *ngIf="playerForm.get('name')?.invalid && playerForm.get('name')?.touched" class="field-error">
+          Player name is required (min 2 characters)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="playerPosition">Position</label>
+        <select
+          id="playerPosition"
+          formControlName="position"
+          class="form-select"
+          [class.error]="playerForm.get('position')?.invalid && playerForm.get('position')?.touched">
+          <option value="">Select position</option>
+          <option *ngFor="let position of positions" [value]="position">{{ position }}</option>
+        </select>
+        <div *ngIf="playerForm.get('position')?.invalid && playerForm.get('position')?.touched" class="field-error">
+          Position is required
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="playerTeam">Team</label>
+        <select
+          id="playerTeam"
+          formControlName="teamId"
+          class="form-select"
+          [class.error]="playerForm.get('teamId')?.invalid && playerForm.get('teamId')?.touched">
+          <option value="">Select team</option>
+          <option *ngFor="let team of teams()" [value]="team.id">{{ team.name }}</option>
+        </select>
+        <div *ngIf="playerForm.get('teamId')?.invalid && playerForm.get('teamId')?.touched" class="field-error">
+          Team is required
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" (click)="closeForm()">
+          Cancel
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="playerForm.invalid">
+          {{ editingPlayer() ? 'Update' : 'Create' }} Player
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
