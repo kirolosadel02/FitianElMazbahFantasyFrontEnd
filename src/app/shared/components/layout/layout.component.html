@@ -2,8 +2,8 @@
   <!-- Header -->
   <header class="header">
     <div class="header-left">
-      <button 
-        class="sidebar-toggle" 
+      <button
+        class="sidebar-toggle"
         (click)="toggleSidebar()"
         aria-label="Toggle sidebar">
         <i class="icon-menu"></i>
@@ -13,7 +13,7 @@
         Fantasy Football
       </h1>
     </div>
-    
+
     <div class="header-right">
       @if (authService.isAuthenticated()) {
         <div class="user-menu">
@@ -74,18 +74,6 @@
             <span class="nav-text">Leaderboard</span>
           </a>
         </li>
-        @if (authService.isAdmin()) {
-          <li class="nav-divider"></li>
-          <li class="nav-section-title">
-            <span>Administration</span>
-          </li>
-          <li class="nav-item">
-            <a routerLink="/admin" routerLinkActive="active" class="nav-link">
-              <i class="icon-admin"></i>
-              <span class="nav-text">Admin Panel</span>
-            </a>
-          </li>
-        }
       </ul>
     </div>
   </nav>

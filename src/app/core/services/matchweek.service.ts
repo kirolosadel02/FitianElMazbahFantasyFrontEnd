@@ -1,18 +1,15 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import {
-  Matchweek,
-  PaginatedResponse
-} from '../models';
+import { Matchweek, CreateMatchweekDto, UpdateMatchweekDto } from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MatchweekService {
-  private readonly apiUrl = `${environment.apiUrl}/Matchweeks`;
+  private readonly apiUrl = `${environment.apiUrl}/matchweeks`;
 
   // Signals for reactive state
   matchweeks = signal<Matchweek[]>([]);
@@ -23,34 +20,12 @@ export class MatchweekService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get all matchweeks with pagination
-   */
-  getMatchweeks(
-    page: number = 1,
-    pageSize: number = 20
-  ): Observable<PaginatedResponse<Matchweek>> {
-    this.isLoading.set(true);
-
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
-
-    return this.http.get<PaginatedResponse<Matchweek>>(this.apiUrl, { params })
-      .pipe(
-        tap(response => {
-          this.matchweeks.set(response.items);
-          this.isLoading.set(false);
-        })
-      );
-  }
-
-  /**
-   * Get all matchweeks (without pagination)
+   * GET /api/matchweeks - Get all matchweeks (public access)
    */
   getAllMatchweeks(): Observable<Matchweek[]> {
     this.isLoading.set(true);
 
-    return this.http.get<Matchweek[]>(`${this.apiUrl}/all`)
+    return this.http.get<Matchweek[]>(this.apiUrl)
       .pipe(
         tap(matchweeks => {
           this.matchweeks.set(matchweeks);
@@ -60,22 +35,7 @@ export class MatchweekService {
   }
 
   /**
-   * Get matchweek by ID
-   */
-  getMatchweekById(id: number): Observable<Matchweek> {
-    this.isLoading.set(true);
-
-    return this.http.get<Matchweek>(`${this.apiUrl}/${id}`)
-      .pipe(
-        tap(matchweek => {
-          this.selectedMatchweek.set(matchweek);
-          this.isLoading.set(false);
-        })
-      );
-  }
-
-  /**
-   * Get current matchweek
+   * GET /api/matchweeks/current - Get current active matchweek (public access)
    */
   getCurrentMatchweek(): Observable<Matchweek> {
     this.isLoading.set(true);
@@ -91,12 +51,12 @@ export class MatchweekService {
   }
 
   /**
-   * Get next matchweek
+   * GET /api/matchweeks/{id} - Get matchweek by ID (public access)
    */
-  getNextMatchweek(): Observable<Matchweek> {
+  getMatchweekById(id: number): Observable<Matchweek> {
     this.isLoading.set(true);
 
-    return this.http.get<Matchweek>(`${this.apiUrl}/next`)
+    return this.http.get<Matchweek>(`${this.apiUrl}/${id}`)
       .pipe(
         tap(matchweek => {
           this.selectedMatchweek.set(matchweek);
@@ -106,96 +66,78 @@ export class MatchweekService {
   }
 
   /**
-   * Get previous matchweek
+   * POST /api/matchweeks - Create new matchweek (admin only)
    */
-  getPreviousMatchweek(): Observable<Matchweek> {
+  createMatchweek(matchweekDto: CreateMatchweekDto): Observable<Matchweek> {
     this.isLoading.set(true);
 
-    return this.http.get<Matchweek>(`${this.apiUrl}/previous`)
+    return this.http.post<Matchweek>(this.apiUrl, matchweekDto)
       .pipe(
         tap(matchweek => {
-          this.selectedMatchweek.set(matchweek);
+          const currentMatchweeks = this.matchweeks();
+          this.matchweeks.set([...currentMatchweeks, matchweek]);
           this.isLoading.set(false);
         })
       );
   }
 
   /**
-   * Get matchweeks by status
+   * PUT /api/matchweeks/{id} - Update matchweek (admin only)
    */
-  getMatchweeksByStatus(isActive: boolean): Observable<Matchweek[]> {
+  updateMatchweek(id: number, matchweekDto: UpdateMatchweekDto): Observable<Matchweek> {
     this.isLoading.set(true);
 
-    const params = new HttpParams().set('isActive', isActive.toString());
-
-    return this.http.get<Matchweek[]>(`${this.apiUrl}/status`, { params })
+    return this.http.put<Matchweek>(`${this.apiUrl}/${id}`, matchweekDto)
       .pipe(
-        tap(matchweeks => {
-          this.matchweeks.set(matchweeks);
+        tap(updatedMatchweek => {
+          const currentMatchweeks = this.matchweeks();
+          const updatedMatchweeks = currentMatchweeks.map(mw => 
+            mw.id === id ? updatedMatchweek : mw
+          );
+          this.matchweeks.set(updatedMatchweeks);
+          
+          if (this.selectedMatchweek()?.id === id) {
+            this.selectedMatchweek.set(updatedMatchweek);
+          }
+          
+          if (this.currentMatchweek()?.id === id) {
+            this.currentMatchweek.set(updatedMatchweek);
+          }
+          
           this.isLoading.set(false);
         })
       );
   }
 
   /**
-   * Get matchweeks by date range
+   * DELETE /api/matchweeks/{id} - Delete matchweek (admin only)
    */
-  getMatchweeksByDateRange(startDate: string, endDate: string): Observable<Matchweek[]> {
+  deleteMatchweek(id: number): Observable<void> {
     this.isLoading.set(true);
 
-    let params = new HttpParams()
-      .set('startDate', startDate)
-      .set('endDate', endDate);
-
-    return this.http.get<Matchweek[]>(`${this.apiUrl}/daterange`, { params })
+    return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(
-        tap(matchweeks => {
-          this.matchweeks.set(matchweeks);
+        tap(() => {
+          const currentMatchweeks = this.matchweeks();
+          const filteredMatchweeks = currentMatchweeks.filter(mw => mw.id !== id);
+          this.matchweeks.set(filteredMatchweeks);
+          
+          if (this.selectedMatchweek()?.id === id) {
+            this.selectedMatchweek.set(null);
+          }
+          
+          if (this.currentMatchweek()?.id === id) {
+            this.currentMatchweek.set(null);
+          }
+          
           this.isLoading.set(false);
         })
       );
   }
 
   /**
-   * Get upcoming matchweeks
+   * Utility methods for UI state management
    */
-  getUpcomingMatchweeks(limit: number = 5): Observable<Matchweek[]> {
-    this.isLoading.set(true);
-
-    const params = new HttpParams().set('limit', limit.toString());
-
-    return this.http.get<Matchweek[]>(`${this.apiUrl}/upcoming`, { params })
-      .pipe(
-        tap(matchweeks => {
-          this.matchweeks.set(matchweeks);
-          this.isLoading.set(false);
-        })
-      );
-  }
-
-  /**
-   * Get completed matchweeks
-   */
-  getCompletedMatchweeks(limit: number = 10): Observable<Matchweek[]> {
-    this.isLoading.set(true);
-
-    const params = new HttpParams().set('limit', limit.toString());
-
-    return this.http.get<Matchweek[]>(`${this.apiUrl}/completed`, { params })
-      .pipe(
-        tap(matchweeks => {
-          this.matchweeks.set(matchweeks);
-          this.isLoading.set(false);
-        })
-      );
-  }
-
-  /**
-   * Check if matchweek is currently active
-   */
-  isMatchweekActive(matchweek: Matchweek): boolean {
-    return matchweek.isActive && !matchweek.isCompleted;
-  }
 
   /**
    * Check if deadline has passed for matchweek
@@ -203,7 +145,6 @@ export class MatchweekService {
   isDeadlinePassed(matchweek: Matchweek): boolean {
     const now = new Date();
     const deadline = new Date(matchweek.deadlineDate);
-
     return now > deadline;
   }
 
@@ -213,51 +154,7 @@ export class MatchweekService {
   getTimeUntilDeadline(matchweek: Matchweek): number {
     const now = new Date();
     const deadline = new Date(matchweek.deadlineDate);
-
     return deadline.getTime() - now.getTime();
-  }
-
-  /**
-   * Create new matchweek (Admin only)
-   */
-  createMatchweek(matchweekData: {
-    weekNumber: number;
-    deadlineDate: string;
-  }): Observable<Matchweek> {
-    return this.http.post<Matchweek>(this.apiUrl, matchweekData);
-  }
-
-  /**
-   * Update matchweek (Admin only)
-   */
-  updateMatchweek(id: number, matchweekData: {
-    weekNumber?: number;
-    deadlineDate?: string;
-    isActive?: boolean;
-    isCompleted?: boolean;
-  }): Observable<Matchweek> {
-    return this.http.put<Matchweek>(`${this.apiUrl}/${id}`, matchweekData);
-  }
-
-  /**
-   * Delete matchweek (Admin only)
-   */
-  deleteMatchweek(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
-  }
-
-  /**
-   * Activate matchweek (Admin only)
-   */
-  activateMatchweek(id: number): Observable<Matchweek> {
-    return this.http.post<Matchweek>(`${this.apiUrl}/${id}/activate`, {});
-  }
-
-  /**
-   * Complete matchweek (Admin only)
-   */
-  completeMatchweek(id: number): Observable<Matchweek> {
-    return this.http.post<Matchweek>(`${this.apiUrl}/${id}/complete`, {});
   }
 
   /**

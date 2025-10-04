@@ -2,6 +2,8 @@
 export * from './auth.interface';
 export * from './common.interface';
 export * from './matchweek.interface';
+export type { CreateMatchweekRequest as CreateMatchweekDto } from './matchweek.interface';
+export type { UpdateMatchweekRequest as UpdateMatchweekDto } from './matchweek.interface';
 export * from './player.interface';
 export * from './player-position.enum';
 export * from './team.interface';

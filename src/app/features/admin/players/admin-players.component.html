@@ -131,7 +131,7 @@
           class="form-select"
           [class.error]="playerForm.get('position')?.invalid && playerForm.get('position')?.touched">
           <option value="">Select position</option>
-          <option *ngFor="let position of positions" [value]="position">{{ position }}</option>
+          <option *ngFor="let position of positions" [value]="position.id">{{ position.name }}</option>
         </select>
         <div *ngIf="playerForm.get('position')?.invalid && playerForm.get('position')?.touched" class="field-error">
           Position is required

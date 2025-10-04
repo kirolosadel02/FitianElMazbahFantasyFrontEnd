@@ -21,40 +21,22 @@ export class TeamService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Get all teams with pagination
-   */
-  getTeams(
-    page: number = 1,
-    pageSize: number = 20,
-    name?: string
-  ): Observable<PaginatedResponse<Team>> {
-    this.isLoading.set(true);
+  // ========================================
+  // USER METHODS - Available to all authenticated users
+  // ========================================
 
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
-
-    if (name) {
-      params = params.set('name', name);
-    }
-
-    return this.http.get<PaginatedResponse<Team>>(this.apiUrl, { params })
-      .pipe(
-        tap(response => {
-          this.teams.set(response.items);
-          this.isLoading.set(false);
-        })
-      );
-  }
+  // Note: The API only provides GET /api/teams (all teams) - no pagination or search endpoints
 
   /**
-   * Get all teams (without pagination)
+   * Get all teams (without pagination) - User endpoint
+   * API: GET /api/teams
+   * Returns: Array of TeamDto objects (200 OK)
+   * Authorization: Required (JWT Token)
    */
   getAllTeams(): Observable<Team[]> {
     this.isLoading.set(true);
 
-    return this.http.get<Team[]>(`${this.apiUrl}/all`)
+    return this.http.get<Team[]>(this.apiUrl)
       .pipe(
         tap(teams => {
           this.teams.set(teams);
@@ -64,7 +46,11 @@ export class TeamService {
   }
 
   /**
-   * Get team by ID
+   * Get team by ID - Returns team with players
+   * API: GET /api/teams/{id}
+   * Returns: TeamWithPlayersDto object (200 OK)
+   * Errors: 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (JWT Token)
    */
   getTeamById(id: number): Observable<Team> {
     this.isLoading.set(true);
@@ -78,40 +64,21 @@ export class TeamService {
       );
   }
 
-  /**
-   * Search teams by name
-   */
-  searchTeams(query: string): Observable<Team[]> {
-    this.isLoading.set(true);
+  // Search functionality not available in current API specification
 
-    const params = new HttpParams().set('q', query);
+  // Note: getTeamById already returns team with players (TeamWithPlayersDto)
 
-    return this.http.get<Team[]>(`${this.apiUrl}/search`, { params })
-      .pipe(
-        tap(teams => {
-          this.teams.set(teams);
-          this.isLoading.set(false);
-        })
-      );
-  }
-
-  /**
-   * Get team with players
-   */
-  getTeamWithPlayers(id: number): Observable<Team> {
-    this.isLoading.set(true);
-
-    return this.http.get<Team>(`${this.apiUrl}/${id}/players`)
-      .pipe(
-        tap(team => {
-          this.selectedTeam.set(team);
-          this.isLoading.set(false);
-        })
-      );
-  }
+  // ========================================
+  // ADMIN METHODS - Require Admin role authorization
+  // ========================================
 
   /**
    * Create new team (Admin only)
+   * API: POST /api/teams
+   * Body: CreateTeamDto { name: string, logoUrl?: string }
+   * Returns: TeamDto object with Location header (201 Created)
+   * Errors: 400 Bad Request (validation), 500 Internal Server Error
+   * Authorization: Required (Admin role)
    */
   createTeam(teamData: {
     name: string;
@@ -122,6 +89,11 @@ export class TeamService {
 
   /**
    * Update team (Admin only)
+   * API: PUT /api/teams/{id}
+   * Body: UpdateTeamDto { name: string, logoUrl?: string }
+   * Returns: Updated TeamDto object (200 OK)
+   * Errors: 400 Bad Request (validation), 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (Admin role)
    */
   updateTeam(id: number, teamData: {
     name: string;
@@ -132,6 +104,11 @@ export class TeamService {
 
   /**
    * Delete team (Admin only)
+   * API: DELETE /api/teams/{id}
+   * Returns: 204 No Content (success)
+   * Errors: 400 Bad Request (team has players), 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (Admin role)
+   * Note: Can only delete teams with no existing players
    */
   deleteTeam(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);

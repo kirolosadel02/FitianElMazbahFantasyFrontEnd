@@ -22,33 +22,32 @@ export class PlayerService {
 
   constructor(private http: HttpClient) {}
 
+  // ========================================
+  // USER METHODS - Available to all authenticated users
+  // ========================================
+
   /**
-   * Get all players with pagination and filtering
+   * Get all players with filtering and pagination
+   * API: GET /api/players
+   * Query Parameters: position?, teamId?, name?, pageNumber?, pageSize?
+   * Returns: Array of PlayerDto objects (200 OK)
+   * Authorization: Required (JWT Token)
    */
   getPlayers(
-    page: number = 1,
-    pageSize: number = 20,
-    position?: string,
+    pageNumber: number = 1,
+    pageSize: number = 10,
+    position?: number,
     teamId?: number,
     name?: string
-  ): Observable<PaginatedResponse<Player>> {
+  ): Observable<Player[]> {
     this.isLoading.set(true);
 
     let params = new HttpParams()
-      .set('pageNumber', page.toString())
+      .set('pageNumber', pageNumber.toString())
       .set('pageSize', pageSize.toString());
 
     if (position) {
-      // Convert position string to backend enum value
-      const positionMap: { [key: string]: number } = {
-        'Goalkeeper': 1,
-        'Defender': 2,
-        'Midfielder': 3,
-        'Forward': 4
-      };
-      if (positionMap[position]) {
-        params = params.set('position', positionMap[position].toString());
-      }
+      params = params.set('position', position.toString());
     }
 
     if (teamId) {
@@ -59,10 +58,10 @@ export class PlayerService {
       params = params.set('name', name);
     }
 
-    return this.http.get<PaginatedResponse<Player>>(this.apiUrl, { params })
+    return this.http.get<Player[]>(this.apiUrl, { params })
       .pipe(
-        tap(response => {
-          this.players.set(response.items);
+        tap(players => {
+          this.players.set(players);
           this.isLoading.set(false);
         })
       );
@@ -70,6 +69,10 @@ export class PlayerService {
 
   /**
    * Get player by ID
+   * API: GET /api/players/{id}
+   * Returns: PlayerDto object (200 OK)
+   * Errors: 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (JWT Token)
    */
   getPlayerById(id: number): Observable<Player> {
     this.isLoading.set(true);
@@ -85,62 +88,65 @@ export class PlayerService {
 
   /**
    * Get players by team
+   * API: GET /api/players/team/{teamId}
+   * Returns: Array of PlayerDto objects (200 OK)
+   * Errors: 500 Internal Server Error
+   * Authorization: Required (JWT Token)
    */
   getPlayersByTeam(teamId: number): Observable<Player[]> {
     this.isLoading.set(true);
 
     return this.http.get<Player[]>(`${this.apiUrl}/team/${teamId}`)
       .pipe(
-        tap(() => this.isLoading.set(false))
+        tap(players => {
+          this.isLoading.set(false);
+        })
       );
   }
 
   /**
    * Get players by position
+   * API: GET /api/players/position/{position}
+   * Returns: Array of PlayerDto objects (200 OK)
+   * Errors: 400 Bad Request (invalid position), 500 Internal Server Error
+   * Authorization: Required (JWT Token)
+   * Position: 1-4 (Goalkeeper, Defender, Midfielder, Forward)
    */
-  getPlayersByPosition(position: PlayerPosition): Observable<Player[]> {
+  getPlayersByPosition(position: number): Observable<Player[]> {
     this.isLoading.set(true);
 
-    const params = new HttpParams().set('position', position);
-
-    return this.http.get<Player[]>(`${this.apiUrl}/position`, { params })
+    return this.http.get<Player[]>(`${this.apiUrl}/position/${position}`)
       .pipe(
-        tap(() => this.isLoading.set(false))
+        tap(players => {
+          this.isLoading.set(false);
+        })
       );
   }
 
   /**
-   * Search players by name
+   * Get total count of players
+   * API: GET /api/players/count
+   * Returns: Integer count (200 OK)
+   * Errors: 500 Internal Server Error
+   * Authorization: Required (JWT Token)
    */
-  searchPlayers(query: string): Observable<Player[]> {
-    this.isLoading.set(true);
-
-    const params = new HttpParams().set('q', query);
-
-    return this.http.get<Player[]>(`${this.apiUrl}/search`, { params })
-      .pipe(
-        tap(() => this.isLoading.set(false))
-      );
+  getPlayersCount(): Observable<number> {
+    return this.http.get<number>(`${this.apiUrl}/count`);
   }
 
-  /**
-   * Get top players by position
-   */
-  getTopPlayers(position: PlayerPosition, limit: number = 10): Observable<Player[]> {
-    this.isLoading.set(true);
+  // Search and top players functionality not available in current API specification
 
-    let params = new HttpParams()
-      .set('position', position)
-      .set('limit', limit.toString());
-
-    return this.http.get<Player[]>(`${this.apiUrl}/top`, { params })
-      .pipe(
-        tap(() => this.isLoading.set(false))
-      );
-  }
+  // ========================================
+  // ADMIN METHODS - Require Admin role authorization
+  // ========================================
 
   /**
    * Create new player (Admin only)
+   * API: POST /api/players
+   * Body: CreatePlayerDto { name: string, position: number (1-4), teamId: number }
+   * Returns: PlayerDto object with Location header (201 Created)
+   * Errors: 400 Bad Request (validation/invalid position/team), 500 Internal Server Error
+   * Authorization: Required (Admin role)
    */
   createPlayer(playerData: {
     name: string;
@@ -152,10 +158,15 @@ export class PlayerService {
 
   /**
    * Update player (Admin only)
+   * API: PUT /api/players/{id}
+   * Body: UpdatePlayerDto { name: string, position: number (1-4), teamId: number }
+   * Returns: Updated PlayerDto object (200 OK)
+   * Errors: 400 Bad Request (validation/invalid position/team), 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (Admin role)
    */
   updatePlayer(id: number, playerData: {
     name: string;
-    position: string;
+    position: number;
     teamId: number;
   }): Observable<Player> {
     return this.http.put<Player>(`${this.apiUrl}/${id}`, playerData);
@@ -163,6 +174,10 @@ export class PlayerService {
 
   /**
    * Delete player (Admin only)
+   * API: DELETE /api/players/{id}
+   * Returns: 204 No Content (success)
+   * Errors: 400 Bad Request (business rule violation), 404 Not Found, 500 Internal Server Error
+   * Authorization: Required (Admin role)
    */
   deletePlayer(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);

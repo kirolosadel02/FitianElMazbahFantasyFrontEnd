@@ -1,15 +1,28 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { TeamService } from '../../../core/services';
 import { Team } from '../../../core/models';
 
+/**
+ * Admin Teams Management Component
+ *
+ * This component provides CRUD operations for managing football teams.
+ * Uses admin-only endpoints that require Admin role authorization:
+ *
+ * - GET /api/teams - View all teams
+ * - POST /api/teams - Create new team
+ * - PUT /api/teams/{id} - Update team
+ * - DELETE /api/teams/{id} - Delete team (only if no players assigned)
+ *
+ * Protected by AdminGuard - only accessible to users with Admin role.
+ */
+
 @Component({
   selector: 'app-admin-teams',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './admin-teams.component.html',
   styleUrls: ['./admin-teams.component.css']
 })
@@ -93,7 +106,16 @@ export class AdminTeamsComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error updating team:', error);
-            this.error.set('Failed to update team');
+
+            // Handle specific API error responses
+            if (error.status === 400) {
+              this.error.set('Invalid team data. Please check your input and try again.');
+            } else if (error.status === 404) {
+              this.error.set('Team not found. It may have been deleted.');
+              this.loadTeams(); // Refresh the list
+            } else {
+              this.error.set('Failed to update team. Please try again.');
+            }
           }
         });
       } else {
@@ -108,7 +130,13 @@ export class AdminTeamsComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error creating team:', error);
-            this.error.set('Failed to create team');
+
+            // Handle specific API error responses
+            if (error.status === 400) {
+              this.error.set('Invalid team data. Please check your input and try again.');
+            } else {
+              this.error.set('Failed to create team. Please try again.');
+            }
           }
         });
       }
@@ -116,14 +144,23 @@ export class AdminTeamsComponent implements OnInit {
   }
 
   deleteTeam(team: Team): void {
-    if (confirm(`Are you sure you want to delete ${team.name}? This will also affect all players in this team.`)) {
+    if (confirm(`Are you sure you want to delete ${team.name}? This action cannot be undone.`)) {
       this.teamService.deleteTeam(team.id).subscribe({
         next: () => {
           this.loadTeams();
         },
         error: (error) => {
           console.error('Error deleting team:', error);
-          this.error.set('Failed to delete team. Make sure no players are assigned to this team.');
+
+          // Handle specific API error responses
+          if (error.status === 400) {
+            this.error.set('Cannot delete team: This team has existing players. Remove all players first.');
+          } else if (error.status === 404) {
+            this.error.set('Team not found. It may have been already deleted.');
+            this.loadTeams(); // Refresh the list
+          } else {
+            this.error.set('Failed to delete team. Please try again.');
+          }
         }
       });
     }

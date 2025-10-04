@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { PlayerService, TeamService, UserTeamService, AuthService } from '../../../core/services';
-import { Player, Team, PlayerPosition, PaginatedResponse } from '../../../core/models';
+import { Player, Team } from '../../../core/models';
 
 @Component({
   selector: 'app-player-list',
@@ -83,25 +83,26 @@ export class PlayerListComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    const position = this.selectedPosition() || undefined;
+    const positionNumber = this.getPositionNumber(this.selectedPosition());
     const teamId = this.selectedTeam() || undefined;
     const name = this.searchQuery() || undefined;
 
     this.playerService.getPlayers(
       this.currentPage(),
       this.pageSize(),
-      position,
+      positionNumber,
       teamId,
       name
     ).subscribe({
-      next: (response: PaginatedResponse<Player>) => {
-        this.players.set(response.items);
-        this.totalPages.set(response.totalPages);
+      next: (players: Player[]) => {
+        this.players.set(players);
+        // Calculate total pages based on returned data length
+        this.totalPages.set(Math.ceil(players.length / this.pageSize()) || 1);
         this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading players:', error);
-        this.error.set('Failed to load players');
+        this.error.set('Failed to load players. Please try again.');
         this.isLoading.set(false);
       }
     });
@@ -111,6 +112,16 @@ export class PlayerListComponent implements OnInit {
     this.selectedPosition.set(position || '');
     this.currentPage.set(1);
     this.loadPlayers();
+  }
+
+  private getPositionNumber(positionName: string): number | undefined {
+    const positionMap: { [key: string]: number } = {
+      'Goalkeeper': 1,
+      'Defender': 2,
+      'Midfielder': 3,
+      'Forward': 4
+    };
+    return positionName ? positionMap[positionName] : undefined;
   }
 
   onTeamChange(teamId: string): void {
@@ -163,9 +174,9 @@ export class PlayerListComponent implements OnInit {
               return;
             }
 
-            // Check team size limit
-            if (currentPlayerIds.length >= 11) {
-              this.error.set('Team is full (11 players maximum)');
+            // Check team size limit (4 players as per backend requirement)
+            if (currentPlayerIds.length >= 4) {
+              this.error.set('Team is full (4 players maximum)');
               return;
             }
 

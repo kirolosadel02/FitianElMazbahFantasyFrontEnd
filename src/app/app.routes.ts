@@ -61,6 +61,10 @@ export const routes: Routes = [
       {
         path: 'teams',
         loadComponent: () => import('./features/admin/teams/admin-teams.component').then(m => m.AdminTeamsComponent)
+      },
+      {
+        path: 'matchweeks',
+        loadComponent: () => import('./admin/components/matchweeks/admin-matchweeks.component').then(m => m.AdminMatchweeksComponent)
       }
     ]
   },

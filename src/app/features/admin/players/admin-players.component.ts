@@ -1,15 +1,28 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 import { PlayerService, TeamService } from '../../../core/services';
-import { Player, Team, PaginatedResponse, PlayerDto } from '../../../core/models';
+import { Player, Team } from '../../../core/models';
+
+/**
+ * Admin Players Management Component
+ *
+ * This component provides CRUD operations for managing football players.
+ * Uses admin-only endpoints that require Admin role authorization:
+ *
+ * - GET /api/players - View all players with filtering
+ * - POST /api/players - Create new player
+ * - PUT /api/players/{id} - Update player
+ * - DELETE /api/players/{id} - Delete player
+ *
+ * Protected by AdminGuard - only accessible to users with Admin role.
+ */
 
 @Component({
   selector: 'app-admin-players',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './admin-players.component.html',
   styleUrls: ['./admin-players.component.css']
 })
@@ -30,8 +43,13 @@ export class AdminPlayersComponent implements OnInit {
   // Forms
   playerForm: FormGroup;
 
-  // Position options matching backend
-  positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
+  // Position options matching backend API (1-4: Goalkeeper, Defender, Midfielder, Forward)
+  positions = [
+    { id: 1, name: 'Goalkeeper' },
+    { id: 2, name: 'Defender' },
+    { id: 3, name: 'Midfielder' },
+    { id: 4, name: 'Forward' }
+  ];
 
   constructor(
     private playerService: PlayerService,
@@ -70,14 +88,16 @@ export class AdminPlayersComponent implements OnInit {
       this.currentPage(),
       this.pageSize
     ).subscribe({
-      next: (response: PaginatedResponse<Player>) => {
-        this.players.set(response.items);
-        this.totalPages.set(response.totalPages);
+      next: (players: Player[]) => {
+        this.players.set(players);
+        // Note: API returns array directly, not paginated response
+        // Calculate total pages based on returned data length
+        this.totalPages.set(Math.ceil(players.length / this.pageSize) || 1);
         this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading players:', error);
-        this.error.set('Failed to load players');
+        this.error.set('Failed to load players. Please try again.');
         this.isLoading.set(false);
       }
     });
@@ -103,11 +123,25 @@ export class AdminPlayersComponent implements OnInit {
   editPlayer(player: Player): void {
     this.editingPlayer.set(player);
     this.showAddForm.set(true);
+
+    // Convert position string to numeric value for form
+    const positionValue = this.getPositionValue(player.position);
+
     this.playerForm.patchValue({
       name: player.name,
-      position: player.position,
+      position: positionValue,
       teamId: player.teamId
     });
+  }
+
+  private getPositionValue(positionName: string): number {
+    const positionMap: { [key: string]: number } = {
+      'Goalkeeper': 1,
+      'Defender': 2,
+      'Midfielder': 3,
+      'Forward': 4
+    };
+    return positionMap[positionName] || 1;
   }
 
   onSubmit(): void {
@@ -119,8 +153,8 @@ export class AdminPlayersComponent implements OnInit {
         // Update existing player
         this.playerService.updatePlayer(editing.id, {
           name: formData.name,
-          position: formData.position,
-          teamId: formData.teamId
+          position: parseInt(formData.position),
+          teamId: parseInt(formData.teamId)
         }).subscribe({
           next: () => {
             this.loadPlayers();
@@ -128,6 +162,16 @@ export class AdminPlayersComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error updating player:', error);
+
+            // Handle specific API error responses
+            if (error.status === 400) {
+              this.error.set('Invalid player data. Please check position (1-4) and team selection.');
+            } else if (error.status === 404) {
+              this.error.set('Player not found. It may have been deleted.');
+              this.loadPlayers(); // Refresh the list
+            } else {
+              this.error.set('Failed to update player. Please try again.');
+            }
             this.error.set('Failed to update player');
           }
         });

@@ -37,15 +37,15 @@ export class AdminDashboardComponent implements OnInit {
 
     try {
       // Load all stats in parallel
-      const [players, teams, users, userTeams, matchweeks] = await Promise.all([
-        this.playerService.getPlayers(1, 1).toPromise(),
+      const [playerCount, teams, users, userTeams, matchweeks] = await Promise.all([
+        this.playerService.getPlayersCount().toPromise(),
         this.teamService.getAllTeams().toPromise(),
         this.userService.getAllUsers().toPromise(),
         this.userTeamService.getAllUserTeams().toPromise(),
         this.matchweekService.getAllMatchweeks().toPromise()
       ]);
 
-      if (players) this.totalPlayers.set(players.totalItems || 0);
+      if (playerCount !== undefined) this.totalPlayers.set(playerCount);
       if (teams) this.totalTeams.set(teams.length);
       if (users) this.totalUsers.set(users.length);
       if (userTeams) this.totalUserTeams.set(userTeams.length);
