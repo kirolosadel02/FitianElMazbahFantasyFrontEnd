@@ -1,0 +1,267 @@
+<div class="matchweek-detail-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <nav class="breadcrumb">
+      <a [routerLink]="['/matchweeks']" class="breadcrumb-link">Matchweeks</a>
+      <span class="breadcrumb-separator">→</span>
+      <span class="breadcrumb-current">
+        @if (selectedMatchweek()) {
+          Week {{ selectedMatchweek()!.weekNumber }}
+        } @else {
+          Matchweek Details
+        }
+      </span>
+    </nav>
+  </div>
+
+  <!-- Loading State -->
+  @if (matchweekService.isLoading() && !selectedMatchweek()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading matchweek details...</p>
+    </div>
+  } @else if (!selectedMatchweek()) {
+    <!-- Matchweek Not Found -->
+    <div class="empty-state error">
+      <div class="empty-icon">❌</div>
+      <h2>Matchweek Not Found</h2>
+      <p>The requested matchweek could not be found.</p>
+      <button 
+        type="button" 
+        class="btn-primary"
+        [routerLink]="['/matchweeks']">
+        Back to All Matchweeks
+      </button>
+    </div>
+  } @else {
+    <!-- Matchweek Details -->
+    <div class="detail-content">
+      <!-- Main Info Card -->
+      <div class="main-card" 
+           [class.active]="selectedMatchweek()!.isActive"
+           [class.completed]="selectedMatchweek()!.isCompleted">
+        <div class="card-hero">
+          <div class="hero-content">
+            <div class="matchweek-badges">
+              @if (selectedMatchweek()!.isActive) {
+                <span class="badge active">Active</span>
+              }
+              @if (selectedMatchweek()!.isCompleted) {
+                <span class="badge completed">Completed</span>
+              }
+              @if (!selectedMatchweek()!.isActive && !selectedMatchweek()!.isCompleted) {
+                <span class="badge upcoming">Upcoming</span>
+              }
+            </div>
+            <h1>Matchweek {{ selectedMatchweek()!.weekNumber }}</h1>
+            <p class="hero-subtitle">Fantasy Football Official Matchweek</p>
+          </div>
+          <div class="hero-icon">📅</div>
+        </div>
+
+        <div class="card-content">
+          <div class="content-grid">
+            <!-- Deadline Information -->
+            <div class="info-section">
+              <div class="section-header">
+                <div class="section-icon">⏰</div>
+                <h3>Deadline Information</h3>
+              </div>
+              <div class="deadline-card">
+                <div class="deadline-main">
+                  <div class="deadline-date">{{ formatDate(selectedMatchweek()!.deadlineDate) }}</div>
+                  <div class="deadline-time">{{ formatTime(selectedMatchweek()!.deadlineDate) }}</div>
+                </div>
+                <div class="deadline-status">
+                  @if (isDeadlinePassed()) {
+                    <div class="status-alert expired">
+                      <div class="alert-icon">❌</div>
+                      <strong>Deadline has passed</strong>
+                    </div>
+                  } @else {
+                    <div class="status-alert active">
+                      <div class="alert-icon">⏰</div>
+                      <strong>{{ getTimeUntilDeadlineText() }}</strong>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- Status Details -->
+            <div class="info-section">
+              <div class="section-header">
+                <div class="section-icon">ℹ️</div>
+                <h3>Status Details</h3>
+              </div>
+              <div class="status-grid">
+                <div class="status-card">
+                  <div class="status-icon">✅</div>
+                  <div class="status-content">
+                    <div class="status-label">Status</div>
+                    <div class="status-value">
+                      @if (selectedMatchweek()!.isCompleted) {
+                        <span class="text-success">Completed</span>
+                      } @else if (selectedMatchweek()!.isActive) {
+                        <span class="text-primary">Active</span>
+                      } @else {
+                        <span class="text-secondary">Upcoming</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <div class="status-card">
+                  <div class="status-icon">📅</div>
+                  <div class="status-content">
+                    <div class="status-label">Created</div>
+                    <div class="status-value">{{ formatDate(selectedMatchweek()!.createdAt) }}</div>
+                  </div>
+                </div>
+
+                @if (selectedMatchweek()!.updatedAt) {
+                  <div class="status-card">
+                    <div class="status-icon">✏️</div>
+                    <div class="status-content">
+                      <div class="status-label">Updated</div>
+                      <div class="status-value">{{ formatDate(selectedMatchweek()!.updatedAt!) }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="actions-section">
+        <h3>Quick Actions</h3>
+        <div class="actions-grid">
+          @if (selectedMatchweek()!.isActive) {
+            <button 
+              type="button" 
+              class="action-card primary"
+              [routerLink]="['/team/my-team']"
+              [disabled]="isDeadlinePassed()">
+              <div class="action-icon">👥</div>
+              <div class="action-content">
+                <h4>Manage Your Team</h4>
+                <p>Edit lineup and make transfers</p>
+              </div>
+            </button>
+          }
+
+          <button 
+            type="button" 
+            class="action-card success"
+            [routerLink]="['/players']">
+            <div class="action-icon">🔍</div>
+            <div class="action-content">
+              <h4>Browse Players</h4>
+              <p>Find and analyze players</p>
+            </div>
+          </button>
+
+          @if (selectedMatchweek()!.isActive) {
+            <button 
+              type="button" 
+              class="action-card info"
+              [routerLink]="['/matchweeks/current']">
+              <div class="action-icon">📊</div>
+              <div class="action-content">
+                <h4>Current Dashboard</h4>
+                <p>View current matchweek dashboard</p>
+              </div>
+            </button>
+          }
+
+          <button 
+            type="button" 
+            class="action-card secondary"
+            [routerLink]="['/matchweeks']">
+            <div class="action-icon">📋</div>
+            <div class="action-content">
+              <h4>All Matchweeks</h4>
+              <p>Browse all matchweeks</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Navigation -->
+        <div class="navigation-section">
+          <h4>Navigate Matchweeks</h4>
+          <div class="navigation-controls">
+            <button 
+              type="button" 
+              class="nav-btn prev"
+              [disabled]="!hasPreviousMatchweek()"
+              (click)="goToPreviousMatchweek()">
+              <span class="nav-icon">←</span>
+              Previous
+            </button>
+            <button 
+              type="button" 
+              class="nav-btn next"
+              [disabled]="!hasNextMatchweek()"
+              (click)="goToNextMatchweek()">
+              Next
+              <span class="nav-icon">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Placeholders -->
+      <div class="features-grid">
+        <!-- Team Performance Placeholder -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <div class="feature-icon">📈</div>
+            <h3>Your Team Performance</h3>
+          </div>
+          <div class="placeholder-content">
+            <div class="placeholder-icon">📊</div>
+            <h4>Performance Tracking Coming Soon</h4>
+            <p>This section will show your team's performance for this matchweek, including points scored, player stats, and rank changes.</p>
+            <button 
+              type="button" 
+              class="btn-outline"
+              [routerLink]="['/team/my-team']">
+              View Your Team
+            </button>
+          </div>
+        </div>
+
+        <!-- Fixtures Placeholder -->
+        <div class="feature-card">
+          <div class="feature-header">
+            <div class="feature-icon">⚽</div>
+            <h3>Fixtures & Results</h3>
+          </div>
+          <div class="placeholder-content">
+            <div class="placeholder-icon">📅</div>
+            <h4>Fixtures Integration Coming Soon</h4>
+            <p>This section will display all fixtures for this matchweek, including match results, scores, and key statistics.</p>
+            <small class="integration-note">Integration with fixtures API pending</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Placeholder -->
+      <div class="statistics-section">
+        <div class="feature-card full-width">
+          <div class="feature-header">
+            <div class="feature-icon">🏆</div>
+            <h3>Matchweek Statistics</h3>
+          </div>
+          <div class="placeholder-content">
+            <div class="placeholder-icon">📊</div>
+            <h4>Statistics Dashboard Coming Soon</h4>
+            <p>This section will include detailed statistics for the matchweek, such as top scorers, most transferred players, average points, and league standings.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

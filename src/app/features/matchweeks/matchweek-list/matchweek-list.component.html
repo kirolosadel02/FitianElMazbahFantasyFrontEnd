@@ -1,0 +1,188 @@
+<div class="matchweek-list-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1>Matchweeks</h1>
+      <p class="subtitle">View all matchweeks and track your progress</p>
+    </div>
+    <div class="header-actions">
+      <button 
+        type="button" 
+        class="btn-primary"
+        (click)="goToCurrentMatchweek()"
+        [disabled]="!currentMatchweek()">
+        <i class="icon-play"></i>
+        Current Matchweek
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Controls -->
+  <div class="filter-section">
+    <div class="filter-controls">
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <div class="custom-select">
+          <select 
+            [(ngModel)]="statusFilter" 
+            (ngModelChange)="onFilterChange()">
+            <option value="all">All Matchweeks</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="upcoming">Upcoming</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Sort By</label>
+        <div class="custom-select">
+          <select 
+            [(ngModel)]="sortBy" 
+            (ngModelChange)="onSortChange()">
+            <option value="weekNumber">Week Number</option>
+            <option value="deadlineDate">Deadline Date</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label class="filter-label">Order</label>
+        <div class="custom-select">
+          <select 
+            [(ngModel)]="sortDirection" 
+            (ngModelChange)="onSortChange()">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="filter-actions">
+        <button 
+          type="button" 
+          class="btn-secondary"
+          (click)="refreshMatchweeks()">
+          <i class="icon-refresh" [class.spinning]="matchweekService.isLoading()"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (matchweekService.isLoading() && filteredMatchweeks().length === 0) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading matchweeks...</p>
+    </div>
+  } @else if (filteredMatchweeks().length === 0) {
+    <!-- Empty State -->
+    <div class="empty-state">
+      <div class="empty-icon">📅</div>
+      <h2>No Matchweeks Found</h2>
+      <p>
+        @if (statusFilter() !== 'all') {
+          No {{ statusFilter() }} matchweeks available. Try changing your filter.
+        } @else {
+          No matchweeks have been created yet.
+        }
+      </p>
+    </div>
+  } @else {
+    <!-- Matchweeks Grid -->
+    <div class="matchweeks-grid">
+      @for (matchweek of filteredMatchweeks(); track matchweek.id) {
+        <div class="matchweek-card" 
+             [class.active]="matchweek.isActive" 
+             [class.completed]="matchweek.isCompleted">
+          <div class="matchweek-header">
+            <div class="matchweek-week">
+              <span class="week-number">{{ matchweek.weekNumber }}</span>
+              <span class="week-label">Week</span>
+            </div>
+            <div class="matchweek-status">
+              @if (matchweek.isCompleted) {
+                <span class="status-badge completed">Completed</span>
+              } @else if (matchweek.isActive) {
+                <span class="status-badge active">Active</span>
+              } @else {
+                <span class="status-badge upcoming">Upcoming</span>
+              }
+            </div>
+          </div>
+
+          <div class="matchweek-info">
+            <div class="deadline-info">
+              <div class="deadline-label">Deadline</div>
+              <div class="deadline-date">{{ formatDate(matchweek.deadlineDate) }}</div>
+              <div class="deadline-time">{{ formatTime(matchweek.deadlineDate) }}</div>
+            </div>
+
+            <div class="time-info">
+              @if (isDeadlinePassed(matchweek)) {
+                <div class="time-status expired">
+                  <i class="icon-warning"></i>
+                  Deadline passed
+                </div>
+              } @else {
+                <div class="time-status active">
+                  <i class="icon-clock"></i>
+                  {{ getTimeUntilDeadlineText(matchweek) }}
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="matchweek-actions">
+            <button 
+              type="button" 
+              class="btn-primary"
+              [routerLink]="['/matchweeks', matchweek.id]">
+              View Details
+            </button>
+          </div>
+        </div>
+      }
+  }
+
+    </div>
+  }
+
+  <!-- Summary Stats -->
+  @if (filteredMatchweeks().length > 0) {
+    <div class="stats-section">
+      <h3>Summary</h3>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-info">
+            <h4>Total</h4>
+            <div class="stat-value">{{ totalMatchweeks() }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-info">
+            <h4>Completed</h4>
+            <div class="stat-value">{{ completedMatchweeks() }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <h4>Active</h4>
+            <div class="stat-value">{{ activeMatchweeks() }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-info">
+            <h4>Upcoming</h4>
+            <div class="stat-value">{{ upcomingMatchweeks() }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,211 @@
+<div class="current-matchweek-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <nav class="breadcrumb">
+      <a [routerLink]="['/matchweeks']" class="breadcrumb-link">Matchweeks</a>
+      <span class="breadcrumb-separator">→</span>
+      <span class="breadcrumb-current">Current Matchweek</span>
+    </nav>
+  </div>
+
+  <!-- Loading State -->
+  @if (matchweekService.isLoading() && !currentMatchweek()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading current matchweek...</p>
+    </div>
+  } @else if (!currentMatchweek()) {
+    <!-- No Current Matchweek -->
+    <div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <h2>No Active Matchweek</h2>
+      <p>There is currently no active matchweek. Please check back later.</p>
+      <button 
+        type="button" 
+        class="btn-primary"
+        [routerLink]="['/matchweeks']">
+        View All Matchweeks
+      </button>
+    </div>
+  } @else {
+    <!-- Current Matchweek Dashboard -->
+    <div class="dashboard-content">
+      <!-- Main Matchweek Card -->
+      <div class="current-matchweek-card">
+        <div class="matchweek-hero">
+          <div class="hero-content">
+            <div class="matchweek-badge">
+              <span class="badge-text">Current</span>
+            </div>
+            <h1>Matchweek {{ currentMatchweek()!.weekNumber }}</h1>
+            <p class="hero-subtitle">Fantasy Football - Official Matchweek</p>
+          </div>
+          <div class="hero-icon">⚽</div>
+        </div>
+
+        <div class="matchweek-details">
+          <!-- Deadline Info -->
+          <div class="detail-section">
+            <div class="section-header">
+              <div class="section-icon">⏰</div>
+              <h3>Deadline Information</h3>
+            </div>
+            <div class="deadline-display">
+              <div class="deadline-main">
+                <div class="deadline-date">{{ formatDate(currentMatchweek()!.deadlineDate) }}</div>
+                <div class="deadline-time">{{ formatTime(currentMatchweek()!.deadlineDate) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Countdown Timer -->
+          <div class="detail-section">
+            <div class="section-header">
+              <div class="section-icon">⏳</div>
+              <h3>Time Remaining</h3>
+            </div>
+            @if (isDeadlinePassed()) {
+              <div class="deadline-expired">
+                <div class="expired-icon">❌</div>
+                <div class="expired-content">
+                  <strong>Deadline has passed</strong>
+                  <p>No more changes can be made to your team</p>
+                </div>
+              </div>
+            } @else {
+              <div class="countdown-display">
+                <div class="countdown-timer">
+                  @if (timeRemaining().days > 0) {
+                    <div class="time-unit">
+                      <span class="time-value">{{ timeRemaining().days }}</span>
+                      <span class="time-label">Days</span>
+                    </div>
+                  }
+                  <div class="time-unit">
+                    <span class="time-value">{{ timeRemaining().hours }}</span>
+                    <span class="time-label">Hours</span>
+                  </div>
+                  <div class="time-unit">
+                    <span class="time-value">{{ timeRemaining().minutes }}</span>
+                    <span class="time-label">Minutes</span>
+                  </div>
+                </div>
+                @if (timeRemaining().total < (24 * 60 * 60 * 1000)) {
+                  <div class="deadline-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <strong>Deadline approaching!</strong> Less than 24 hours remaining.
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="actions-section">
+        <h3>Quick Actions</h3>
+        <div class="actions-grid">
+          <button 
+            type="button" 
+            class="action-card primary"
+            [routerLink]="['/team/my-team']"
+            [disabled]="isDeadlinePassed()">
+            <div class="action-icon">👥</div>
+            <div class="action-content">
+              <h4>Manage Team</h4>
+              <p>Edit your lineup and make transfers</p>
+            </div>
+          </button>
+          
+          <button 
+            type="button" 
+            class="action-card success"
+            [routerLink]="['/players']">
+            <div class="action-icon">🔍</div>
+            <div class="action-content">
+              <h4>Browse Players</h4>
+              <p>Find and analyze player stats</p>
+            </div>
+          </button>
+          
+          <button 
+            type="button" 
+            class="action-card info"
+            [routerLink]="['/matchweeks', currentMatchweek()!.id]">
+            <div class="action-icon">📊</div>
+            <div class="action-content">
+              <h4>View Details</h4>
+              <p>See detailed matchweek information</p>
+            </div>
+          </button>
+          
+          <button 
+            type="button" 
+            class="action-card secondary"
+            [routerLink]="['/matchweeks']">
+            <div class="action-icon">📅</div>
+            <div class="action-content">
+              <h4>All Matchweeks</h4>
+              <p>Browse all matchweeks</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Status and Team Information -->
+      <div class="info-grid">
+        <!-- Status Information -->
+        <div class="info-card">
+          <div class="card-header">
+            <div class="card-icon">ℹ️</div>
+            <h3>Status Information</h3>
+          </div>
+          <div class="status-list">
+            <div class="status-item">
+              <span class="status-label">Matchweek Status:</span>
+              <span class="status-value">
+                @if (currentMatchweek()!.isCompleted) {
+                  <span class="badge completed">Completed</span>
+                } @else {
+                  <span class="badge active">Active</span>
+                }
+              </span>
+            </div>
+            
+            <div class="status-item">
+              <span class="status-label">Created On:</span>
+              <span class="status-value">{{ formatDate(currentMatchweek()!.createdAt) }}</span>
+            </div>
+            
+            @if (currentMatchweek()!.updatedAt) {
+              <div class="status-item">
+                <span class="status-label">Last Updated:</span>
+                <span class="status-value">{{ formatDate(currentMatchweek()!.updatedAt!) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Team Status Placeholder -->
+        <div class="info-card">
+          <div class="card-header">
+            <div class="card-icon">👥</div>
+            <h3>Your Team Status</h3>
+          </div>
+          <div class="placeholder-content">
+            <div class="placeholder-icon">⚙️</div>
+            <h4>Team Management Coming Soon</h4>
+            <p>This section will show your current team lineup, recent transfers, and points for this matchweek.</p>
+            <button 
+              type="button" 
+              class="btn-outline"
+              [routerLink]="['/team/my-team']">
+              Go to Team Management
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

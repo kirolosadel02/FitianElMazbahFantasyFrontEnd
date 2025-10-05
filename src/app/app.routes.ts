@@ -36,6 +36,23 @@ export const routes: Routes = [
       {
         path: 'players',
         loadComponent: () => import('./features/players/player-list/player-list.component').then(m => m.PlayerListComponent)
+      },
+      {
+        path: 'matchweeks',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/matchweeks/matchweek-list/matchweek-list.component').then(m => m.MatchweekListComponent)
+          },
+          {
+            path: 'current',
+            loadComponent: () => import('./features/matchweeks/current-matchweek/current-matchweek.component').then(m => m.CurrentMatchweekComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/matchweeks/matchweek-detail/matchweek-detail.component').then(m => m.MatchweekDetailComponent)
+          }
+        ]
       }
     ]
   },

@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatchweekService } from '../../../core/services/matchweek.service';
 import { Matchweek, CreateMatchweekDto, UpdateMatchweekDto } from '../../../core/models';
@@ -8,118 +8,129 @@ import { Matchweek, CreateMatchweekDto, UpdateMatchweekDto } from '../../../core
 @Component({
   selector: 'app-admin-matchweeks',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
-    <div class="admin-matchweeks">
-      <div class="header">
-        <h2>Matchweek Management</h2>
-        <button 
-          type="button" 
-          class="btn btn-primary" 
-          (click)="showCreateForm()">
-          <i class="fas fa-plus"></i>
-          Add New Matchweek
-        </button>
+    <div class="admin-matchweeks-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1>Matchweek Management</h1>
+          <p class="subtitle">Create, edit, and manage fantasy football matchweeks</p>
+        </div>
+        <div class="header-actions">
+          <button 
+            type="button" 
+            class="btn-primary" 
+            (click)="showCreateForm()">
+            <span class="add-icon">+</span>
+            Add New Matchweek
+          </button>
+        </div>
       </div>
 
       <!-- Create/Edit Form -->
       @if (showForm()) {
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0">{{ isEditing() ? 'Edit' : 'Create' }} Matchweek</h5>
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-title">
+              <div class="form-icon">{{ isEditing() ? '✏️' : '➕' }}</div>
+              <h3>{{ isEditing() ? 'Edit' : 'Create' }} Matchweek</h3>
+            </div>
+            <button 
+              type="button" 
+              class="form-close-btn"
+              (click)="cancelForm()">
+              ✕
+            </button>
           </div>
-          <div class="card-body">
+          <div class="form-content">
             <form [formGroup]="matchweekForm" (ngSubmit)="onSubmit()">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="weekNumber" class="form-label">Week Number</label>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Week Number</label>
+                  <div class="input-wrapper">
                     <input 
                       type="number" 
-                      class="form-control" 
-                      id="weekNumber"
+                      class="form-input" 
+                      placeholder="Enter week number (1-38)"
                       formControlName="weekNumber"
-                      [class.is-invalid]="matchweekForm.get('weekNumber')?.invalid && matchweekForm.get('weekNumber')?.touched">
+                      [class.error]="matchweekForm.get('weekNumber')?.invalid && matchweekForm.get('weekNumber')?.touched">
                     @if (matchweekForm.get('weekNumber')?.invalid && matchweekForm.get('weekNumber')?.touched) {
-                      <div class="invalid-feedback">
+                      <div class="error-message">
+                        <span class="error-icon">⚠️</span>
                         Week number is required and must be positive
                       </div>
                     }
                   </div>
                 </div>
 
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="deadlineDate" class="form-label">Deadline Date & Time</label>
+                <div class="form-group">
+                  <label class="form-label">Deadline Date & Time</label>
+                  <div class="input-wrapper">
                     <input 
                       type="datetime-local" 
-                      class="form-control" 
-                      id="deadlineDate"
+                      class="form-input" 
                       formControlName="deadlineDate"
-                      [class.is-invalid]="matchweekForm.get('deadlineDate')?.invalid && matchweekForm.get('deadlineDate')?.touched">
+                      [class.error]="matchweekForm.get('deadlineDate')?.invalid && matchweekForm.get('deadlineDate')?.touched">
                     @if (matchweekForm.get('deadlineDate')?.invalid && matchweekForm.get('deadlineDate')?.touched) {
-                      <div class="invalid-feedback">
+                      <div class="error-message">
+                        <span class="error-icon">⚠️</span>
                         Deadline date is required
                       </div>
                     }
                   </div>
                 </div>
+
+                @if (isEditing()) {
+                  <div class="form-group">
+                    <label class="form-label">Status Options</label>
+                    <div class="checkbox-group">
+                      <label class="checkbox-wrapper">
+                        <input 
+                          type="checkbox" 
+                          class="checkbox-input"
+                          formControlName="isActive">
+                        <span class="checkbox-custom"></span>
+                        <span class="checkbox-label">Active Matchweek</span>
+                      </label>
+
+                      <label class="checkbox-wrapper">
+                        <input 
+                          type="checkbox" 
+                          class="checkbox-input"
+                          formControlName="isCompleted">
+                        <span class="checkbox-custom"></span>
+                        <span class="checkbox-label">Completed Matchweek</span>
+                      </label>
+                    </div>
+                  </div>
+                }
               </div>
 
-              @if (isEditing()) {
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="mb-3">
-                      <div class="form-check">
-                        <input 
-                          class="form-check-input" 
-                          type="checkbox" 
-                          id="isActive" 
-                          formControlName="isActive">
-                        <label class="form-check-label" for="isActive">
-                          Active
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <div class="mb-3">
-                      <div class="form-check">
-                        <input 
-                          class="form-check-input" 
-                          type="checkbox" 
-                          id="isCompleted" 
-                          formControlName="isCompleted">
-                        <label class="form-check-label" for="isCompleted">
-                          Completed
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-
               @if (errorMessage()) {
-                <div class="alert alert-danger" role="alert">
-                  {{ errorMessage() }}
+                <div class="error-alert">
+                  <div class="alert-icon">❌</div>
+                  <div class="alert-content">
+                    <strong>Error:</strong>
+                    <p>{{ errorMessage() }}</p>
+                  </div>
                 </div>
               }
 
-              <div class="d-flex justify-content-end gap-2">
+              <div class="form-actions">
                 <button 
                   type="button" 
-                  class="btn btn-secondary" 
+                  class="btn-secondary" 
                   (click)="cancelForm()"
                   [disabled]="matchweekService.isLoading()">
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  class="btn btn-primary"
+                  class="btn-primary"
                   [disabled]="matchweekForm.invalid || matchweekService.isLoading()">
                   @if (matchweekService.isLoading()) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span class="loading-spinner"></span>
                   }
                   {{ isEditing() ? 'Update' : 'Create' }} Matchweek
                 </button>
@@ -129,197 +140,201 @@ import { Matchweek, CreateMatchweekDto, UpdateMatchweekDto } from '../../../core
         </div>
       }
 
+      <!-- Filter Controls -->
+      <div class="filter-section">
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label class="filter-label">Filter by Status</label>
+            <div class="custom-select">
+              <select 
+                [(ngModel)]="statusFilter" 
+                (ngModelChange)="onFilterChange()">
+                <option value="all">All Matchweeks</option>
+                <option value="active">Active Only</option>
+                <option value="completed">Completed Only</option>
+                <option value="upcoming">Upcoming Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label">Search</label>
+            <div class="search-wrapper">
+              <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search by week number..."
+                [(ngModel)]="searchTerm"
+                (input)="onSearchChange()">
+              <span class="search-icon">🔍</span>
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button 
+              type="button" 
+              class="refresh-btn"
+              (click)="refreshMatchweeks()"
+              [disabled]="matchweekService.isLoading()">
+              @if (matchweekService.isLoading()) {
+                <span class="spinner-small"></span>
+              }
+              Refresh
+            </button>
+            <button 
+              type="button" 
+              class="export-btn"
+              (click)="exportMatchweeks()">
+              Export
+            </button>
+            <button 
+              type="button" 
+              class="deactivate-btn"
+              (click)="deactivateAll()"
+              [disabled]="!hasActiveMatchweeks() || matchweekService.isLoading()">
+              Deactivate All
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Matchweeks List -->
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">All Matchweeks</h5>
+      <div class="data-section">
+        <div class="section-header">
+          <div class="section-title">
+            <h3>All Matchweeks</h3>
+            <div class="count-badge">{{ filteredMatchweeks().length }} of {{ matchweeks().length }}</div>
+          </div>
         </div>
-        <div class="card-body">
-          @if (matchweekService.isLoading() && matchweeks().length === 0) {
-            <div class="text-center p-4">
-              <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
+
+        <!-- Loading State -->
+        @if (matchweekService.isLoading() && filteredMatchweeks().length === 0) {
+          <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Loading matchweeks...</p>
+          </div>
+        } @else if (filteredMatchweeks().length === 0) {
+          <!-- Empty State -->
+          <div class="empty-state">
+            <div class="empty-icon">📅</div>
+            <h4>No Matchweeks Found</h4>
+            <p>No matchweeks found. Create your first matchweek to get started.</p>
+            <button 
+              type="button" 
+              class="btn-primary"
+              (click)="showCreateForm()">
+              Create First Matchweek
+            </button>
+          </div>
+        } @else {
+          <!-- Matchweeks Grid -->
+          <div class="matchweeks-grid">
+            @for (matchweek of filteredMatchweeks(); track matchweek.id) {
+              <div class="matchweek-card" 
+                   [class.active]="matchweek.isActive" 
+                   [class.completed]="matchweek.isCompleted">
+                <div class="card-header">
+                  <div class="week-info">
+                    <div class="week-number">{{ matchweek.weekNumber }}</div>
+                    <div class="week-label">Week</div>
+                  </div>
+                  <div class="status-badges">
+                    @if (matchweek.isActive) {
+                      <span class="status-badge active">Active</span>
+                    } @else {
+                      <span class="status-badge inactive">Inactive</span>
+                    }
+                    @if (matchweek.isCompleted) {
+                      <span class="status-badge completed">Completed</span>
+                    }
+                  </div>
+                </div>
+
+                <div class="card-content">
+                  <div class="deadline-info">
+                    <div class="info-label">Deadline</div>
+                    <div class="deadline-date">{{ formatDate(matchweek.deadlineDate) }}</div>
+                    <div class="deadline-status">
+                      @if (isDeadlinePassed(matchweek)) {
+                        <span class="status-text expired">
+                          <span class="status-icon">⏰</span>
+                          Deadline passed
+                        </span>
+                      } @else {
+                        <span class="status-text active">
+                          <span class="status-icon">⏰</span>
+                          {{ getTimeUntilDeadlineText(matchweek) }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="created-info">
+                    <div class="info-label">Created</div>
+                    <div class="created-date">{{ formatDate(matchweek.createdAt) }}</div>
+                  </div>
+                </div>
+
+                <div class="card-actions">
+                  <button 
+                    type="button" 
+                    class="action-btn edit"
+                    (click)="editMatchweek(matchweek)"
+                    [disabled]="matchweekService.isLoading()">
+                    <span class="btn-icon">✏️</span>
+                    Edit
+                  </button>
+                  <button 
+                    type="button" 
+                    class="action-btn delete"
+                    (click)="confirmDelete(matchweek)"
+                    [disabled]="matchweekService.isLoading()">
+                    <span class="btn-icon">🗑️</span>
+                    Delete
+                  </button>
+                </div>
               </div>
-              <p class="mt-2">Loading matchweeks...</p>
-            </div>
-          } @else if (matchweeks().length === 0) {
-            <div class="text-center p-4">
-              <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-              <p class="text-muted">No matchweeks found. Create your first matchweek to get started.</p>
-            </div>
-          } @else {
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th>Week #</th>
-                    <th>Deadline</th>
-                    <th>Status</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (matchweek of matchweeks(); track matchweek.id) {
-                    <tr>
-                      <td>
-                        <strong>{{ matchweek.weekNumber }}</strong>
-                      </td>
-                      <td>
-                        {{ formatDate(matchweek.deadlineDate) }}
-                        @if (isDeadlinePassed(matchweek)) {
-                          <small class="text-danger d-block">
-                            <i class="fas fa-clock"></i> Deadline passed
-                          </small>
-                        } @else {
-                          <small class="text-success d-block">
-                            <i class="fas fa-clock"></i> {{ getTimeUntilDeadlineText(matchweek) }}
-                          </small>
-                        }
-                      </td>
-                      <td>
-                        <div class="d-flex flex-column gap-1">
-                          @if (matchweek.isActive) {
-                            <span class="badge bg-success">Active</span>
-                          } @else {
-                            <span class="badge bg-secondary">Inactive</span>
-                          }
-                          @if (matchweek.isCompleted) {
-                            <span class="badge bg-info">Completed</span>
-                          }
-                        </div>
-                      </td>
-                      <td>
-                        {{ formatDate(matchweek.createdAt) }}
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          <button 
-                            type="button" 
-                            class="btn btn-outline-primary"
-                            (click)="editMatchweek(matchweek)"
-                            [disabled]="matchweekService.isLoading()">
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button 
-                            type="button" 
-                            class="btn btn-outline-danger"
-                            (click)="confirmDelete(matchweek)"
-                            [disabled]="matchweekService.isLoading()">
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
       </div>
 
       <!-- Delete Confirmation Modal -->
       @if (showDeleteModal()) {
-        <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-          <div class="modal-dialog">
+        <div class="modal-overlay" (click)="cancelDelete()">
+          <div class="modal-container" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>Confirm Delete</h3>
+              <button type="button" class="close-btn" (click)="cancelDelete()">✕</button>
+            </div>
+            
             <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Confirm Delete</h5>
-                <button type="button" class="btn-close" (click)="cancelDelete()"></button>
-              </div>
-              <div class="modal-body">
-                <p>Are you sure you want to delete <strong>Week {{ matchweekToDelete()?.weekNumber }}</strong>?</p>
-                <p class="text-danger">
-                  <i class="fas fa-exclamation-triangle"></i>
-                  This action cannot be undone and may affect user teams if the matchweek is active.
-                </p>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="cancelDelete()" [disabled]="matchweekService.isLoading()">
-                  Cancel
-                </button>
-                <button type="button" class="btn btn-danger" (click)="deleteMatchweek()" [disabled]="matchweekService.isLoading()">
-                  @if (matchweekService.isLoading()) {
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                  }
-                  Delete Matchweek
-                </button>
-              </div>
+              <div class="warning-icon">⚠️</div>
+              <p>Are you sure you want to delete <strong>Week {{ matchweekToDelete()?.weekNumber }}</strong>?</p>
+              <p class="warning-text">This action cannot be undone and may affect user teams if the matchweek is active.</p>
+            </div>
+            
+            <div class="modal-actions">
+              <button type="button" class="btn-secondary" (click)="cancelDelete()" [disabled]="matchweekService.isLoading()">
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                class="btn-danger" 
+                (click)="deleteMatchweek()" 
+                [disabled]="matchweekService.isLoading()">
+                @if (matchweekService.isLoading()) {
+                  <span class="spinner-small"></span>
+                }
+                Delete
+              </button>
             </div>
           </div>
         </div>
       }
     </div>
   `,
-  styles: [`
-    .admin-matchweeks {
-      padding: 1rem;
-    }
-
-    .header {
-      display: flex;
-      justify-content: between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .header h2 {
-      margin: 0;
-      color: #333;
-    }
-
-    .table th {
-      background-color: #f8f9fa;
-      border-bottom: 2px solid #dee2e6;
-      font-weight: 600;
-    }
-
-    .btn-group-sm .btn {
-      padding: 0.25rem 0.5rem;
-    }
-
-    .badge {
-      font-size: 0.75em;
-    }
-
-    .modal.show {
-      display: block !important;
-    }
-
-    .spinner-border-sm {
-      width: 1rem;
-      height: 1rem;
-    }
-
-    .fa-3x {
-      font-size: 3em;
-    }
-
-    .form-check {
-      padding-left: 1.5em;
-    }
-
-    .invalid-feedback {
-      display: block;
-    }
-
-    @media (max-width: 768px) {
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-      }
-
-      .btn-group {
-        flex-direction: column;
-      }
-
-      .table-responsive {
-        font-size: 0.875rem;
-      }
-    }
-  `]
+  styleUrls: ['./admin-matchweeks.component.css']
 })
 export class AdminMatchweeksComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -333,9 +348,43 @@ export class AdminMatchweeksComponent implements OnInit {
   showDeleteModal = signal(false);
   matchweekToDelete = signal<Matchweek | null>(null);
   editingMatchweek = signal<Matchweek | null>(null);
+  statusFilter = signal<'all' | 'active' | 'completed' | 'upcoming'>('all');
+  searchTerm = signal<string>('');
 
   // Computed
   matchweeks = computed(() => this.matchweekService.matchweeks());
+  
+  filteredMatchweeks = computed(() => {
+    let filtered = this.matchweeks();
+    
+    // Apply status filter
+    const status = this.statusFilter();
+    if (status !== 'all') {
+      filtered = filtered.filter(matchweek => {
+        switch (status) {
+          case 'active':
+            return matchweek.isActive;
+          case 'completed':
+            return matchweek.isCompleted;
+          case 'upcoming':
+            return !matchweek.isActive && !matchweek.isCompleted;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Apply search filter
+    const search = this.searchTerm().toLowerCase();
+    if (search) {
+      filtered = filtered.filter(matchweek => 
+        matchweek.weekNumber.toString().includes(search)
+      );
+    }
+    
+    // Sort by week number
+    return filtered.sort((a, b) => a.weekNumber - b.weekNumber);
+  });
 
   // Form
   matchweekForm = this.fb.nonNullable.group({
@@ -531,6 +580,85 @@ export class AdminMatchweeksComponent implements OnInit {
       return `${hours}h ${minutes}m left`;
     } else {
       return `${minutes}m left`;
+    }
+  }
+
+  // Filter and search methods
+  onFilterChange(): void {
+    // Filtering is handled by computed signal
+  }
+
+  onSearchChange(): void {
+    // Search is handled by computed signal
+  }
+
+  refreshMatchweeks(): void {
+    this.loadMatchweeks();
+  }
+
+  exportMatchweeks(): void {
+    const matchweeks = this.filteredMatchweeks();
+    const csvContent = this.generateCSV(matchweeks);
+    this.downloadCSV(csvContent, 'matchweeks.csv');
+  }
+
+  deactivateAll(): void {
+    const activeMatchweeks = this.matchweeks().filter(mw => mw.isActive);
+    
+    if (activeMatchweeks.length === 0) {
+      return;
+    }
+
+    if (confirm(`Deactivate all ${activeMatchweeks.length} active matchweeks?`)) {
+      activeMatchweeks.forEach(matchweek => {
+        const updateDto: UpdateMatchweekDto = {
+          weekNumber: matchweek.weekNumber,
+          deadlineDate: matchweek.deadlineDate,
+          isActive: false,
+          isCompleted: matchweek.isCompleted
+        };
+
+        this.matchweekService.updateMatchweek(matchweek.id, updateDto).subscribe({
+          error: (error) => {
+            console.error(`Error deactivating matchweek ${matchweek.weekNumber}:`, error);
+          }
+        });
+      });
+    }
+  }
+
+  hasActiveMatchweeks(): boolean {
+    return this.matchweeks().some(mw => mw.isActive);
+  }
+
+  private generateCSV(matchweeks: Matchweek[]): string {
+    const headers = ['Week Number', 'Deadline Date', 'Is Active', 'Is Completed', 'Created At', 'Updated At'];
+    const rows = matchweeks.map(mw => [
+      mw.weekNumber.toString(),
+      mw.deadlineDate,
+      mw.isActive.toString(),
+      mw.isCompleted.toString(),
+      mw.createdAt,
+      mw.updatedAt || ''
+    ]);
+
+    return [headers, ...rows]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+  }
+
+  private downloadCSV(content: string, filename: string): void {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   }
 }
